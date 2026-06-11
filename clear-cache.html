@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clearing Cache...</title>
+</head>
+<body>
+    <h2>Force Clearing App Cache...</h2>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names)
+                    caches.delete(name);
+            });
+        }
+        setTimeout(() => {
+            window.location.href = 'index.html?bust=' + Date.now();
+        }, 1500);
+    </script>
+</body>
+</html>

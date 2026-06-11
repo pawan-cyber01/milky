@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="MILKY - Professional Dairy Milk Collection Management System. Track Customer collections, calculate milk rates, generate reports and export data." />
+  <meta name="theme-color" content="#0ea5e9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MILKY" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥛</text></svg>" />
+  <title>MILKY — Dairy Collection Management</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- jsPDF + html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- SheetJS (XLSX) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== SIDEBAR NAV (Desktop) ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo" id="logoArea">
+      <img src="" alt="Logo" class="logo-img" id="logoImg" style="display:none;" />
+      <div class="logo-icon" id="logoIcon">🥛</div>
+      <div class="logo-text">
+        <span class="logo-name" id="companyName">MILKY</span>
+        <span class="logo-sub">Dairy Manager</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#dashboard" class="nav-item" data-page="dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#settings" class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </a>
+      <a href="#calculator" class="nav-item active" data-page="calculator">
+        <span class="nav-icon">🧮</span>
+        <span class="nav-label">Calculator</span>
+      </a>
+      <a href="#Customer" class="nav-item" data-page="Customer">
+        <span class="nav-icon">👨‍🌾</span>
+        <span class="nav-label">Customer Entry</span>
+      </a>
+      <a href="#history" class="nav-item" data-page="history">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">History</span>
+      </a>
+      <a href="#reports" class="nav-item" data-page="reports">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Reports</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span id="footerText">Made by Shiv Dairy Badaun</span>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content" id="mainContent">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
+      <div class="topbar-title" id="pageTitle">Calculator</div>
+      <div class="topbar-actions">
+        <!-- Admin panel: accessible only via #milkpanel URL (secret route) -->
+        <button class="icon-btn pwa-install-btn" id="pwaInstallBtn" title="Install App" aria-label="Install App" style="display:none;">
+          📲
+        </button>
+        <a href="#settings" class="icon-btn" title="Settings" aria-label="Settings" data-page="settings">⚙️</a>
+        <button class="icon-btn" id="themeBtn" title="Toggle Theme" aria-label="Toggle theme">🌙</button>
+      </div>
+    </header>
+
+    <!-- ===== PAGE: DASHBOARD ===== -->
+    <section class="page" id="page-dashboard">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p class="page-subtitle">Today's Overview — <span id="todayDate"></span></p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-icon">🥛</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTodayQty">0 Kg</div>
+            <div class="stat-label">Today's Collection</div>
+          </div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">💰</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTodayAmt">₹0</div>
+            <div class="stat-label">Today's Amount</div>
+          </div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-icon">👨‍🌾</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statCustomers">0</div>
+            <div class="stat-label">Total Customers</div>
+          </div>
+        </div>
+        <div class="stat-card indigo">
+          <div class="stat-icon">📅</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statMonthQty">0 Kg</div>
+            <div class="stat-label">Monthly Collection</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <a href="#calculator" class="quick-btn" data-page="calculator">
+          <span>🧮</span> New Calculation
+        </a>
+        <a href="#history" class="quick-btn" data-page="history">
+          <span>📋</span> View History
+        </a>
+        <a href="#reports" class="quick-btn" data-page="reports">
+          <span>📈</span> Reports
+        </a>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Collection Trend (Last 7 Days)</h3>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chartCollection"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Amount Trend (Last 7 Days)</h3>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chartAmount"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card chart-full">
+          <div class="card-header">
+            <h3>Average Fat % Trend</h3>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chartFat"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE: CALCULATOR ===== -->
+    <section class="page active" id="page-calculator">
+      <div class="page-header compact-header">
+        <h1>🧮 Milk Calculator</h1>
+        <p class="page-subtitle">SNF • Fat • Rates • Amount</p>
+      </div>
+
+      <!-- Unified Calculator Card -->
+      <div class="card calc-card">
+
+        <!-- Input Grid: Qty+Fat on row 1, CLR+Rate on row 2 -->
+        <div class="calc-form-grid">
+          <div class="form-group">
+            <label for="calcQty">Quantity (Kg)</label>
+            <input type="number" id="calcQty" placeholder="e.g. 10.5" step="0.01" min="0" inputmode="decimal" />
+          </div>
+          <div class="form-group">
+            <label for="calcFat">Fat %</label>
+            <input type="number" id="calcFat" placeholder="e.g. 4.5" step="0.1" min="0" max="10" inputmode="decimal" />
+          </div>
+          <div class="form-group">
+            <label for="calcCLR">CLR</label>
+            <input type="number" id="calcCLR" placeholder="e.g. 26" step="0.1" min="20" max="40" inputmode="decimal" />
+          </div>
+          <div class="form-group" style="position: relative;">
+            <label for="calcRate">RATE <span class="hint">₹/100KG</span></label>
+            <input type="number" id="calcRate" placeholder="Auto" step="0.01" min="0" inputmode="decimal" />
+            <div id="rateFatDisplay" style="font-weight: bold; font-size: 0.9rem; margin-top: 4px; display: none;">FAT Rate: <span id="rateFatSpan"></span></div>
+          </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="calc-actions">
+          <button class="btn btn-primary btn-calc-main" id="calcBtn">🧮 Calculate</button>
+          <button class="btn btn-outline" id="calcResetBtn">↺</button>
+          <button class="btn btn-secondary" onclick="navigate('history')">📋</button>
+        </div>
+
+        <!-- Divider -->
+        <div class="calc-divider" id="calcDivider"></div>
+
+        <!-- Result Panel (inline, no separate card) -->
+        <div class="result-empty" id="resultEmpty">
+          <div class="empty-icon">🥛</div>
+          <p>Enter values &amp; tap <strong>Calculate</strong></p>
+        </div>
+
+        <div class="result-body" id="resultBody" style="display:none;">
+          <div class="result-header-row">
+            <span class="result-section-title">📊 Results</span>
+            <span class="result-badge" id="resultDate"></span>
+          </div>
+
+          <div class="result-inline-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="ri-cell accent">
+              <span class="ri-label">SNF</span>
+              <span class="ri-value" id="resSNF">—</span>
+            </div>
+            <div class="ri-cell" style="grid-row: span 2; display: none;">
+              <!-- Spacer -->
+            </div>
+            <div class="ri-cell">
+              <span class="ri-label">FAT Kg</span>
+              <span class="ri-value" id="resFatKg">—</span>
+            </div>
+            <div class="ri-cell">
+              <span class="ri-label">SNF Kg</span>
+              <span class="ri-value" id="resSNFKg">—</span>
+            </div>
+            <div class="ri-cell accent">
+              <span class="ri-label">Avg. Rate</span>
+              <span class="ri-value" id="resAvgRate">—</span>
+            </div>
+          </div>
+
+          <!-- Total Highlight Box -->
+          <div class="result-total-box mt-md" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--primary-light); color: var(--primary-dark); border-radius: 8px;">
+            <div class="total-label" style="font-weight: 600; font-size: 1.1rem; color: inherit;">💰 Amount</div>
+            <div class="total-value" id="resTotalAmt" style="font-weight: 700; font-size: 1.4rem; color: inherit;">—</div>
+          </div>
+
+          <!-- WhatsApp + Customer entry -->
+          <div class="calc-post-actions">
+            <button class="btn btn-whatsapp flex-1" id="waMiniBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Send Receipt
+            </button>
+            <button class="btn btn-primary flex-1" onclick="navigate('Customer')">
+              👨‍🌾 Add Customer
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /calc-card -->
+    </section>
+
+    <!-- ===== PAGE: CUSTOMER ENTRY ===== -->
+    <section class="page" id="page-Customer">
+      <div class="page-header">
+        <h1>Customer Entry</h1>
+        <p class="page-subtitle">Auto-saves when valid Name & 10-digit Mobile are entered</p>
+      </div>
+
+      <div class="two-col-layout">
+        <!-- Customer Details -->
+        <div class="card">
+          <div class="card-header">
+            <h3>👨‍🌾 Customer Information</h3>
+          </div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="customerName">Customer Name *</label>
+              <input type="text" id="customerName" placeholder="Enter Customer name" list="customerNameList" autocomplete="off" />
+              <datalist id="customerNameList"></datalist>
+            </div>
+            <div class="form-group full">
+              <label for="customerMobile">Mobile Number *</label>
+              <input type="tel" id="customerMobile" placeholder="10-digit mobile" maxlength="10" />
+            </div>
+          </div>
+
+          <!-- Milk Data Summary (pre-filled from calculator) -->
+          <div class="summary-section">
+            <h4 class="summary-title">📊 Milk Data</h4>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="s-label">Date</span>
+                <span class="s-value" id="fDate">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">Quantity (Kg)</span>
+                <span class="s-value" id="fQty">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">Fat %</span>
+                <span class="s-value" id="fFat">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">CLR</span>
+                <span class="s-value" id="fCLR">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">SNF %</span>
+                <span class="s-value" id="fSNF">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">Fat Kg</span>
+                <span class="s-value" id="fFatKg">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">SNF Kg</span>
+                <span class="s-value" id="fSNFKg">—</span>
+              </div>
+              <div class="summary-item">
+                <span class="s-label">Avg Rate</span>
+                <span class="s-value" id="fAvgRate">—</span>
+              </div>
+            </div>
+            <div class="total-banner">
+              <span>Total Amount</span>
+              <span class="total-value" id="fTotalAmt">₹—</span>
+            </div>
+          </div>
+
+          <div class="btn-row mt-md">
+            <button class="btn btn-outline" id="clearCustomerBtn">✕ Clear Form</button>
+          </div>
+          <div class="btn-row mt-sm">
+            <button class="btn btn-whatsapp" id="waCustomerBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Send WhatsApp Receipt
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Records -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🕐 Recent Records</h3>
+            <a href="#history" class="link-btn" data-page="history">View All</a>
+          </div>
+          <div id="recentRecords" class="recent-list">
+            <div class="empty-state">No records yet. Start by calculating!</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE: HISTORY ===== -->
+    <section class="page" id="page-history">
+      <div class="page-header">
+        <h1>Collection History</h1>
+        <p class="page-subtitle">All Customer records</p>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="card filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="historySearch" placeholder="Search by name, mobile, village..." />
+        </div>
+        <div class="filter-actions">
+          <select id="historySortBy">
+            <option value="date-desc">Date (Newest)</option>
+            <option value="date-asc">Date (Oldest)</option>
+            <option value="amount-desc">Amount (High)</option>
+            <option value="amount-asc">Amount (Low)</option>
+            <option value="name-asc">Name (A-Z)</option>
+          </select>
+          <button class="btn btn-outline" id="histExportExcel">📊 Excel</button>
+          <button class="btn btn-outline" id="histExportPDF">📄 PDF</button>
+          <button class="btn btn-danger-outline" id="deleteAllBtn">🗑 Clear All</button>
+        </div>
+      </div>
+
+      <!-- Totals Bar -->
+      <div class="totals-bar" id="historyTotals">
+        <div class="total-item">
+          <span class="t-label">Total Records</span>
+          <span class="t-value" id="totRecords">0</span>
+        </div>
+        <div class="total-item">
+          <span class="t-label">Total Qty (Kg)</span>
+          <span class="t-value" id="totQty">0</span>
+        </div>
+        <div class="total-item">
+          <span class="t-label">Total Fat Kg</span>
+          <span class="t-value" id="totFatKg">0</span>
+        </div>
+        <div class="total-item">
+          <span class="t-label">Total SNF Kg</span>
+          <span class="t-value" id="totSNFKg">0</span>
+        </div>
+        <div class="total-item highlight-total">
+          <span class="t-label">Total Amount</span>
+          <span class="t-value" id="totAmount">₹0</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card table-card">
+        <div class="table-wrap">
+          <table class="data-table" id="historyTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Customer Name</th>
+                <th>Mobile</th>
+                <th>Qty (Kg)</th>
+                <th>Fat %</th>
+                <th>CLR</th>
+                <th>SNF %</th>
+                <th>Fat Kg</th>
+                <th>SNF Kg</th>
+                <th>Avg Rate</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="14" class="empty-row">No records found</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE: REPORTS ===== -->
+    <section class="page" id="page-reports">
+      <div class="page-header">
+        <h1>Reports</h1>
+        <p class="page-subtitle">Generate and export reports</p>
+      </div>
+
+      <!-- Report Filters -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📅 Report Filters</h3>
+        </div>
+        <div class="report-filter-row">
+          <div class="report-type-tabs">
+            <button class="tab-btn active" data-report="daily">Daily</button>
+            <button class="tab-btn" data-report="weekly">Weekly</button>
+            <button class="tab-btn" data-report="monthly">Monthly</button>
+            <button class="tab-btn" data-report="Customer">Customer-wise</button>
+          </div>
+          <div class="report-date-inputs" id="reportDateInputs">
+            <input type="date" id="reportDate" />
+          </div>
+        </div>
+        <div class="report-Customer-input" id="reportCustomerInput" style="display:none;">
+          <input type="text" id="reportCustomerName" placeholder="Enter Customer name to filter..." />
+        </div>
+        <button class="btn btn-primary mt-md" id="generateReportBtn">📊 Generate Report</button>
+      </div>
+
+      <!-- Report Output -->
+      <div id="reportOutput" style="display:none;">
+        <!-- Summary Cards -->
+        <div class="report-stats" id="reportStats"></div>
+
+        <!-- Export Buttons -->
+        <div class="card">
+          <div class="card-header">
+            <h3>📤 Export Options</h3>
+          </div>
+          <div class="export-btn-row">
+            <button class="btn btn-export pdf" id="exportPDF">📄 Export PDF</button>
+            <button class="btn btn-export excel" id="exportExcel">📊 Export Excel</button>
+            <button class="btn btn-export csv" id="exportCSV">📋 Export CSV</button>
+            <button class="btn btn-export print" id="exportPrint">🖨️ Print</button>
+          </div>
+        </div>
+
+        <!-- Report Table -->
+        <div class="card table-card" id="reportTableCard">
+          <div class="card-header">
+            <h3 id="reportTableTitle">Report Data</h3>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="reportTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Mobile</th>
+                  <th>Qty (Kg)</th>
+                  <th>Fat %</th>
+                  <th>CLR</th>
+                  <th>SNF %</th>
+                  <th>Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="reportBody"></tbody>
+              <tfoot id="reportFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE: SETTINGS ===== -->
+    <section class="page" id="page-settings">
+      <div class="page-header">
+        <h1>⚙️ Settings</h1>
+        <p class="page-subtitle">System configuration & settings</p>
+      </div>
+
+      <div class="admin-grid">
+        <!-- Theme & UI Settings -->
+        <div class="card">
+          <div class="card-header"><h3>🎨 UI & Theme Settings</h3></div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="adminWADairyName">WhatsApp Dairy Name</label>
+              <input type="text" id="adminWADairyName" placeholder="e.g. Shiv Dairy Badaun" />
+            </div>
+            <div class="form-group full">
+              <label for="adminLanguage">Language</label>
+              <select id="adminLanguage">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label for="adminFont">App Font</label>
+              <select id="adminFont">
+                <option value="Inter">Inter (Default)</option>
+                <option value="Outfit">Outfit (Modern)</option>
+                <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Segoe UI</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label for="adminTheme">Primary Color</label>
+              <div class="color-picker-row">
+                <input type="color" id="adminTheme" value="#0ea5e9" />
+                <span id="adminThemeHex">#0ea5e9</span>
+              </div>
+            </div>
+            <div class="form-group full">
+              <label>Preset Themes</label>
+              <div class="theme-presets">
+                <button class="preset-dot" style="background:#0ea5e9;" data-color="#0ea5e9" title="Cyan"></button>
+                <button class="preset-dot" style="background:#8b5cf6;" data-color="#8b5cf6" title="Purple"></button>
+                <button class="preset-dot" style="background:#10b981;" data-color="#10b981" title="Green"></button>
+                <button class="preset-dot" style="background:#f59e0b;" data-color="#f59e0b" title="Amber"></button>
+                <button class="preset-dot" style="background:#ef4444;" data-color="#ef4444" title="Red"></button>
+                <button class="preset-dot" style="background:#ec4899;" data-color="#ec4899" title="Pink"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row mt-lg">
+        <button class="btn btn-primary" id="saveAdminBtn">💾 Save All Settings</button>
+      </div>
+    </section>
+
+  </main><!-- /main-content -->
+
+  <!-- ===== BOTTOM NAV (Mobile) ===== -->
+  <nav class="bottom-nav" id="bottomNav">
+    <a href="#dashboard" class="bnav-item" data-page="dashboard">
+      <div class="bnav-icon-wrap"><span class="bnav-icon">📊</span></div>
+      <span class="bnav-label">Home</span>
+    </a>
+
+    <a href="#calculator" class="bnav-item active" data-page="calculator">
+      <div class="bnav-icon-wrap"><span class="bnav-icon">🧮</span></div>
+      <span class="bnav-label">Calc</span>
+    </a>
+    <a href="#Customer" class="bnav-item" data-page="Customer">
+      <div class="bnav-icon-wrap"><span class="bnav-icon">👨‍🌾</span></div>
+      <span class="bnav-label">Entry</span>
+    </a>
+    <a href="#history" class="bnav-item" data-page="history">
+      <div class="bnav-icon-wrap"><span class="bnav-icon">📋</span></div>
+      <span class="bnav-label">History</span>
+    </a>
+    <a href="#reports" class="bnav-item" data-page="reports">
+      <div class="bnav-icon-wrap"><span class="bnav-icon">📈</span></div>
+      <span class="bnav-label">Reports</span>
+    </a>
+  </nav>
+
+  <!-- ===== EDIT RECORD MODAL ===== -->
+  <div class="modal-overlay" id="editModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✏️ Edit Record</h3>
+        <button class="modal-close" id="editModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId" />
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="editName">Customer Name</label>
+            <input type="text" id="editName" />
+          </div>
+          <div class="form-group">
+            <label for="editMobile">Mobile</label>
+            <input type="tel" id="editMobile" />
+          </div>
+          <div class="form-group">
+            <label for="editVillage">Village</label>
+            <input type="text" id="editVillage" />
+          </div>
+          <div class="form-group">
+            <label for="editQty">Quantity (Kg)</label>
+            <input type="number" id="editQty" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label for="editFat">Fat %</label>
+            <input type="number" id="editFat" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label for="editCLR">CLR</label>
+            <input type="number" id="editCLR" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label for="editDate">Date</label>
+            <input type="date" id="editDate" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="saveEditBtn">💾 Save Changes</button>
+        <button class="btn btn-outline" id="editModalClose2">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== CONFIRM DIALOG ===== -->
+  <div class="modal-overlay" id="confirmOverlay" style="display:none;">
+    <div class="modal confirm-modal">
+      <div class="modal-body center">
+        <div class="confirm-icon">⚠️</div>
+        <h3 id="confirmTitle">Are you sure?</h3>
+        <p id="confirmMsg">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="confirmYes">Yes, Proceed</button>
+        <button class="btn btn-outline" id="confirmNo">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WHATSAPP MODAL ===== -->
+  <div class="modal-overlay" id="waModalOverlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>💬 Send WhatsApp</h3>
+        <button class="close-btn" id="waModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="waCustomerName">Customer Name</label>
+            <input type="text" id="waCustomerName" placeholder="Name (Optional)" />
+          </div>
+          <div class="form-group full">
+            <label for="waCustomerMobile">Mobile Number</label>
+            <input type="tel" id="waCustomerMobile" placeholder="10-digit number" maxlength="10" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="waSendBtn">🚀 Send</button>
+        <button class="btn btn-outline" id="waModalCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- JavaScript -->
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/customer.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/whatsapp.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/pwa.js"></script>
+</body>
+</html>
