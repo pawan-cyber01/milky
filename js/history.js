@@ -8,6 +8,7 @@
 const HistoryModule = {
 
   currentRecords: [],
+  pendingWhatsAppRecordId: null,
 
   /* Main render function */
   render() {
@@ -187,14 +188,46 @@ const HistoryModule = {
   sendWA(id) {
     const r = Store.getRecords().find(r => r.id === id);
     if (!r) return;
-    const s = Store.getSettings();
+
+    HistoryModule.pendingWhatsAppRecordId = id;
+    const overlay = document.getElementById('waModalOverlay');
+    const nameEl = document.getElementById('waCustomerName');
+    const mobEl = document.getElementById('waCustomerMobile');
+
+    if (nameEl) nameEl.value = r.name === 'Customer Pending' ? '' : (r.name || '');
+    if (mobEl) mobEl.value = (r.mobile || '').replace(/\D/g, '').slice(0, 10);
+    if (overlay) {
+      overlay.dataset.mode = 'history';
+      overlay.style.display = 'flex';
+    }
+  },
+
+  sendPendingWA() {
+    const id = HistoryModule.pendingWhatsAppRecordId;
+    const r = Store.getRecords().find(r => r.id === id);
+    if (!r) return;
+
+    const name = (document.getElementById('waCustomerName').value || '').trim() || r.name || '—';
+    const mobile = (document.getElementById('waCustomerMobile').value || '').replace(/\D/g, '').slice(0, 10);
+    if (mobile.length !== 10) {
+      showToast('⚠️ Enter a valid 10-digit mobile number', 'warning');
+      return;
+    }
+
     const res = {
       qty: r.qty, fat: r.fat, clr: r.clr, snf: r.snf,
       fatKg: r.fatKg, snfKg: r.snfKg, avgRate: r.avgRate, totalAmt: r.totalAmt,
       date: r.date
     };
-    const msg = generateReceiptText(r.name, r.mobile, res);
-    window.open('https://wa.me/91' + r.mobile + '?text=' + encodeURIComponent(msg), '_blank');
+    const msg = generateReceiptText(name, mobile, res);
+    window.open('https://wa.me/91' + mobile + '?text=' + encodeURIComponent(msg), '_blank');
+
+    const overlay = document.getElementById('waModalOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+      delete overlay.dataset.mode;
+    }
+    HistoryModule.pendingWhatsAppRecordId = null;
   }
 };
 
@@ -228,6 +261,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('editModal').addEventListener('click', e => {
     if (e.target === document.getElementById('editModal')) HistoryModule.closeEdit();
   });
+
+  const waSendBtn = document.getElementById('waSendBtn');
+  if (waSendBtn) {
+    waSendBtn.addEventListener('click', () => {
+      const overlay = document.getElementById('waModalOverlay');
+      if (overlay && overlay.dataset.mode === 'history') HistoryModule.sendPendingWA();
+    });
+  }
 });
 
 /* ── CSS for date badge ─────────────────────────────────── */

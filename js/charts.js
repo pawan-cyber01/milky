@@ -35,7 +35,7 @@ const ChartsModule = {
 
   /* Aggregate records for a given day */
   dayAgg(records, date) {
-    const dayRecs = records.filter(r => r.date === date);
+    const dayRecs = records.filter(r => dateKey(r.date) === date);
     return {
       qty : dayRecs.reduce((s, r) => s + parseFloat(r.qty    || 0), 0),
       amt : dayRecs.reduce((s, r) => s + parseFloat(r.totalAmt || 0), 0),

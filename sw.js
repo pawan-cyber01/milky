@@ -3,26 +3,26 @@
    Service Worker — Cache-first offline support
    ============================================================ */
 
-const CACHE_NAME    = 'milky-v1.17';
-const CACHE_DYNAMIC = 'milky-dynamic-v14';
+const CACHE_NAME    = 'milky-v1.20';
+const CACHE_DYNAMIC = 'milky-dynamic-v17';
 
 /* Local assets to cache immediately on install */
 const STATIC_ASSETS = [
-  './?v=1.15',
-  './index.html?v=1.15',
-  './css/style.css?v=1.15',
-  './js/app.js?v=1.15',
-  './js/calculator.js?v=1.15',
-  './js/i18n.js?v=1.15',
-  './js/customer.js?v=1.15',
-  './js/history.js?v=1.15',
-  './js/reports.js?v=1.15',
-  './js/export.js?v=1.15',
-  './js/whatsapp.js?v=1.15',
-  './js/admin.js?v=1.15',
-  './js/charts.js?v=1.15',
-  './js/pwa.js?v=1.15',
-  './manifest.json?v=1.15'
+  './?v=1.20',
+  './index.html?v=1.20',
+  './css/style.css?v=1.20',
+  './js/app.js?v=1.20',
+  './js/calculator.js?v=1.20',
+  './js/i18n.js?v=1.20',
+  './js/customer.js?v=1.20',
+  './js/history.js?v=1.20',
+  './js/reports.js?v=1.20',
+  './js/export.js?v=1.20',
+  './js/whatsapp.js?v=1.20',
+  './js/admin.js?v=1.20',
+  './js/charts.js?v=1.20',
+  './js/pwa.js?v=1.20',
+  './manifest.json?v=1.20'
 ];
 
 /* CDN assets to cache when first accessed */

@@ -35,7 +35,7 @@ const Calculator = {
             fatRate: 8.0, snfRate: 4.0,
             avgRate: Number(avgRate.toFixed(2)),
             totalAmt: Number((qty * avgRate).toFixed(2)),
-            date: new Date().toISOString()
+            date: typeof todayISO === 'function' ? todayISO() : new Date().toISOString().split('T')[0]
         };
     }
 
@@ -99,9 +99,9 @@ const Calculator = {
       snfKg: finalSnfKg,
       fatRate: Number(displayFatRate.toFixed(2)),
       snfRate: Number(displaySnfRate.toFixed(2)),
-      avgRate: avgRate, 
-      totalAmt: amount,
-      date: new Date().toISOString()
+      avgRate: Number(avgRate.toFixed(2)), 
+      totalAmt: Number(amount.toFixed(2)),
+      date: typeof todayISO === 'function' ? todayISO() : new Date().toISOString().split('T')[0]
     };
   }
 };
@@ -152,14 +152,14 @@ function renderResult(res) {
 function prefillCustomerPage(res) {
   if (typeof setText !== 'function') return;
   setText('fDate',    typeof fmtDate === 'function' ? fmtDate(res.date) : res.date);
-  setText('fQty',     res.qty + ' Kg');
-  setText('fFat',     res.fat + ' %');
-  setText('fCLR',     res.clr);
-  setText('fSNF',     res.snf + ' %');
-  setText('fFatKg',   res.fatKg + ' Kg');
-  setText('fSNFKg',   res.snfKg + ' Kg');
-  setText('fAvgRate', '₹ ' + res.avgRate);
-  setText('fTotalAmt','₹ ' + res.totalAmt);
+  setText('fQty',     Number(res.qty).toFixed(3) + ' Kg');
+  setText('fFat',     Number(res.fat).toFixed(2) + ' %');
+  setText('fCLR',     Number(res.clr).toFixed(2));
+  setText('fSNF',     Number(res.snf).toFixed(2) + ' %');
+  setText('fFatKg',   Number(res.fatKg).toFixed(2) + ' Kg');
+  setText('fSNFKg',   Number(res.snfKg).toFixed(2) + ' Kg');
+  setText('fAvgRate', '₹ ' + Number(res.avgRate).toFixed(2));
+  setText('fTotalAmt','₹ ' + Number(res.totalAmt).toFixed(2));
 }
 
 function clearResult() {
@@ -187,6 +187,33 @@ function showToast(msg, type = 'info', ms = 3000) {
   setTimeout(() => { toast.className = 'toast'; }, ms);
 }
 
+function saveCalculationToHistory(calc) {
+  if (!calc || typeof Store === 'undefined') return null;
+
+  const nameEl = document.getElementById('customerName');
+  const mobEl = document.getElementById('customerMobile');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const mobile = mobEl ? mobEl.value.trim() : '';
+
+  const saved = Store.addRecord({
+    name     : name || 'Customer Pending',
+    mobile   : mobile,
+    date     : calc.date,
+    qty      : calc.qty,
+    fat      : calc.fat,
+    clr      : calc.clr,
+    snf      : calc.snf,
+    fatKg    : calc.fatKg,
+    snfKg    : calc.snfKg,
+    avgRate  : calc.avgRate,
+    totalAmt : calc.totalAmt
+  });
+
+  window.currentAutoSaveId = saved.id;
+  window.hasSavedCurrentCalc = true;
+  return saved;
+}
+
 function doCalculate() {
   const qty = parseFloat(document.getElementById('calcQty').value);
   const fat = parseFloat(document.getElementById('calcFat').value);
@@ -200,15 +227,16 @@ function doCalculate() {
 
   try {
     lastCalcResult = Calculator.calculate(qty, fat, clr, rateOverride);
-    window.hasSavedCurrentCalc = false; // Reset auto-save flag for the new calculation
+    window.hasSavedCurrentCalc = false;
     window.currentAutoSaveId = null;
     renderResult(lastCalcResult);
+    saveCalculationToHistory(lastCalcResult);
     
     // Pre-fill logic safe check
     if (typeof window.prefillCustomerPage === 'function') {
         window.prefillCustomerPage(lastCalcResult);
     }
-    showToast('✅ Calculation complete!', 'success');
+    showToast('✅ Calculation saved to history!', 'success');
     
     // Auto-save immediately if customer details are already filled!
     if (typeof window.CustomerModule !== 'undefined') {
@@ -238,6 +266,10 @@ function doSaveFromCalc() {
     }
 }
 
+function calculateAvgRate(qty, fat, clr, rateOverride) {
+  return Calculator.calculate(qty, fat, clr, rateOverride).avgRate;
+}
+
 function sendWaMsg() {
   if (!lastCalcResult) {
     showToast('⚠️ Please calculate first', 'warning');
@@ -246,7 +278,10 @@ function sendWaMsg() {
   
   // Open WA Modal
   const overlay = document.getElementById('waModalOverlay');
-  if (overlay) overlay.style.display = 'flex';
+  if (overlay) {
+    overlay.dataset.mode = 'calculator';
+    overlay.style.display = 'flex';
+  }
   
   const nameEl = document.getElementById('waCustomerName');
   const mobEl = document.getElementById('waCustomerMobile');
@@ -262,7 +297,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const sendBtn = document.getElementById('waSendBtn');
   const mobileInput = document.getElementById('waCustomerMobile');
 
-  const closeModal = () => { if (overlay) overlay.style.display = 'none'; };
+  const closeModal = () => {
+    if (overlay) {
+      overlay.style.display = 'none';
+      delete overlay.dataset.mode;
+    }
+  };
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
@@ -275,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (sendBtn) {
     sendBtn.addEventListener('click', () => {
+      if (overlay && overlay.dataset.mode === 'history') return;
       if (!lastCalcResult) return;
       const cName = document.getElementById('waCustomerName').value.trim() || '—';
       const cMobile = document.getElementById('waCustomerMobile').value.trim();
@@ -333,3 +374,4 @@ window.Calculator    = Calculator;
 window.getCalcResult = () => lastCalcResult;
 window.calculateAvgRate = calculateAvgRate;
 window.prefillCustomerPage = prefillCustomerPage;
+window.clearResult = clearResult;

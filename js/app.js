@@ -97,7 +97,7 @@ const PAGE_TITLES = {
 };
 
 function navigate(page) {
-  window.location.hash = page;
+  window.location.hash = String(page || '').toLowerCase();
 }
 
 function handleRoute() {
@@ -114,7 +114,7 @@ function handleRoute() {
   // Highlight nav
   document.querySelectorAll('.nav-item, .bnav-item').forEach(el => {
     el.classList.remove('active');
-    if (el.dataset.page === page) el.classList.add('active');
+    if ((el.dataset.page || '').toLowerCase() === page) el.classList.add('active');
   });
 
   // Update topbar title
@@ -162,7 +162,7 @@ function initDashboard() {
   const records = Store.getRecords();
 
   // Today's stats
-  const todayRecs = records.filter(r => r.date === today);
+  const todayRecs = records.filter(r => dateKey(r.date) === today);
   const todayQty  = todayRecs.reduce((s, r) => s + parseFloat(r.qty || 0), 0);
   const todayAmt  = todayRecs.reduce((s, r) => s + parseFloat(r.totalAmt || 0), 0);
 
@@ -170,7 +170,7 @@ function initDashboard() {
   const uniqueCustomers = new Set(records.map(r => r.mobile || r.name)).size;
 
   // Monthly
-  const monthRecs = records.filter(r => (r.date || '').startsWith(thisMonth));
+  const monthRecs = records.filter(r => dateKey(r.date).startsWith(thisMonth));
   const monthQty  = monthRecs.reduce((s, r) => s + parseFloat(r.qty || 0), 0);
 
   setText('statTodayQty', fmt(todayQty, 2) + ' Kg');
@@ -225,8 +225,14 @@ function setText(id, txt) {
 
 function fmtDate(isoDate) {
   if (!isoDate) return '—';
-  const [y, m, d] = isoDate.split('-');
+  const dateOnly = dateKey(isoDate);
+  const [y, m, d] = dateOnly.split('-');
+  if (!y || !m || !d) return String(isoDate);
   return `${d}/${m}/${y}`;
+}
+
+function dateKey(isoDate) {
+  return String(isoDate || '').split('T')[0];
 }
 
 function todayISO() {
@@ -348,6 +354,7 @@ window.navigate       = navigate;
 window.fmt            = fmt;
 window.setText        = setText;
 window.fmtDate        = fmtDate;
+window.dateKey        = dateKey;
 window.todayISO       = todayISO;
 window.applyTheme     = applyTheme;
 window.applyBranding  = applyBranding;

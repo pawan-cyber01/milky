@@ -24,20 +24,23 @@ const ReportsModule = {
     switch(type) {
       case 'daily':
         const filterDate = dateInput || today;
-        records = records.filter(r => r.date === filterDate);
+        records = records.filter(r => dateKey(r.date) === filterDate);
         title = 'Daily Report — ' + fmtDate(filterDate);
         break;
 
       case 'weekly':
         const wStart = dateInput ? getWeekStart(dateInput) : thisWeek.start;
         const wEnd   = dateInput ? getWeekEnd(dateInput)   : thisWeek.end;
-        records = records.filter(r => r.date >= wStart && r.date <= wEnd);
+        records = records.filter(r => {
+          const d = dateKey(r.date);
+          return d >= wStart && d <= wEnd;
+        });
         title = `Weekly Report — ${fmtDate(wStart)} to ${fmtDate(wEnd)}`;
         break;
 
       case 'monthly':
         const month = dateInput ? dateInput.slice(0, 7) : thisMonth;
-        records = records.filter(r => (r.date || '').startsWith(month));
+        records = records.filter(r => dateKey(r.date).startsWith(month));
         const [my, mm] = month.split('-');
         title = `Monthly Report — ${getMonthName(parseInt(mm))} ${my}`;
         break;

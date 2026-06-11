@@ -119,6 +119,7 @@ const CustomerModule = {
   /* Load recent 5 records into the sidebar panel */
   loadRecent() {
     const container = document.getElementById('recentRecords');
+    if (!container) return;
     const records   = Store.getRecords().slice(0, 5);
 
     if (!records.length) {
